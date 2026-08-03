@@ -1004,9 +1004,8 @@ if (
                     for i, d in enumerate(data_order):
 
                         if (
-                            d["pelanggan"].strip().lower()
-                            ==
-                            row["pelanggan"].strip().lower()
+                           d["pelanggan"].strip().lower() == row["pelanggan"].strip().lower()
+                            and d["status"] == "Diproses"
                         ):
 
                             ws_order.update_cell(
