@@ -2164,40 +2164,40 @@ elif menu == "Optimasi Distribusi":
 
             })
             periode = (
-            f"{awal.strftime('%d/%m/%Y')} - "
-            f"{akhir.strftime('%d/%m/%Y')}"
-        )
-
-        # ===========================
-        # CEK APAKAH SUDAH ADA
-        # ===========================
-        ws_ss = spreadsheet.worksheet("safety_stock")
-        data_ss = ws_ss.get_all_records()
-
-        sudah_ada = any(
-            str(row["tahun"]) == str(tahun)
-            and row["bulan"] == bulan
-            and row["minggu"] == minggu
-            for row in data_ss
-        )
-
-        # ===========================
-        # SIMPAN JIKA BELUM ADA
-        # ===========================
-        if not sudah_ada:
-            simpan_safety_stock(
-                tahun,
-                bulan,
-                minggu,
-                periode,
-                len(grup),
-                permintaan.sum(),
-                rata,
-                sd,
-                ss,
-                minimum,
-                maksimum
+                f"{awal.strftime('%d/%m/%Y')} - "
+                f"{akhir.strftime('%d/%m/%Y')}"
             )
+
+            # ===========================
+            # CEK APAKAH SUDAH ADA
+            # ===========================
+            ws_ss = spreadsheet.worksheet("safety_stock")
+            data_ss = ws_ss.get_all_records()
+    
+            sudah_ada = any(
+                str(row["tahun"]) == str(tahun)
+                and row["bulan"] == bulan
+                and row["minggu"] == minggu
+                for row in data_ss
+            )
+
+            # ===========================
+            # SIMPAN JIKA BELUM ADA
+            # ===========================
+            if not sudah_ada:
+                simpan_safety_stock(
+                    tahun,
+                    bulan,
+                    minggu,
+                    periode,
+                    len(grup),
+                    permintaan.sum(),
+                    rata,
+                    sd,
+                    ss,
+                    minimum,
+                    maksimum
+                )
 
         hasil = pd.DataFrame(hasil)
         st.session_state.hasil_ss = hasil
@@ -2206,8 +2206,6 @@ elif menu == "Optimasi Distribusi":
             hasil,
             use_container_width=True
         )
-
-
         # =====================================
         # DETAIL ORDER PER PERIODE
         # =====================================
