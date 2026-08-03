@@ -1020,7 +1020,6 @@ if (
                 # Cek apakah semua selesai
                 #==========================
                 time.sleep(1)
-                st.write(df_monitor)
                 data_monitor = ws.get(
                     "A:K",
                     value_render_option=ValueRenderOption.unformatted
@@ -1175,7 +1174,6 @@ if (
                         # Kosongkan hasil optimasi
                         # ==========================
                         ws.clear()
-
                         ws.append_row([
 
                             "tanggal",
