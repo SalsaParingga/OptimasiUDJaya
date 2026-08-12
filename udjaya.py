@@ -235,43 +235,57 @@ def simpan_safety_stock(
 # DAN GENETIC ALGORITHM (GA)
 # ==========================================
 # ==========================================
-# MEMBUAT MATRIKS JARAK BERDASARKAN ID
+# MEMBUAT MATRIKS JARAK UNTUK ORDER TERPILIH
 # ==========================================
-def buat_matriks_jarak(df_pelanggan):
 
-    # Pastikan ID berupa integer
-    df_pelanggan = df_pelanggan.copy()
-    df_pelanggan["ID"] = pd.to_numeric(
-        df_pelanggan["ID"],
-        errors="coerce"
-    ).astype(int)
+def buat_matriks_jarak(pelanggan_terpilih, gudang):
 
-    # ID lokasi
-    daftar_id = df_pelanggan["ID"].tolist()
+    # Gudang = index 0
+    lokasi = [{
+        "matrix_id": 0,
+        "nama": "Gudang UD Jaya",
+        "lat": float(gudang["Y (Latitude)"]),
+        "lon": float(gudang["X (Longitude)"])
+    }]
 
-    # Matriks menggunakan ID sebagai index
-    matriks_jarak = {
-        id_asal: {}
-        for id_asal in daftar_id
-    }
+    # Pelanggan terpilih mulai dari index 1
+    for i, pelanggan in enumerate(
+        pelanggan_terpilih,
+        start=1
+    ):
 
-    for _, asal in df_pelanggan.iterrows():
+        pelanggan["matrix_id"] = i
 
-        id_asal = int(asal["ID"])
+        lokasi.append({
+            "matrix_id": i,
+            "nama": pelanggan["nama"],
+            "lat": float(pelanggan["lat"]),
+            "lon": float(pelanggan["lon"])
+        })
 
-        lat1 = float(asal["Y (Latitude)"])
-        lon1 = float(asal["X (Longitude)"])
+    jumlah_lokasi = len(lokasi)
 
-        for _, tujuan in df_pelanggan.iterrows():
+    matriks_jarak = [
+        [0.0 for _ in range(jumlah_lokasi)]
+        for _ in range(jumlah_lokasi)
+    ]
 
-            id_tujuan = int(tujuan["ID"])
+    for i in range(jumlah_lokasi):
 
-            lat2 = float(tujuan["Y (Latitude)"])
-            lon2 = float(tujuan["X (Longitude)"])
+        for j in range(jumlah_lokasi):
 
-            matriks_jarak[id_asal][id_tujuan] = geodesic(
-                (lat1, lon1),
-                (lat2, lon2)
+            if i == j:
+                continue
+
+            matriks_jarak[i][j] = geodesic(
+                (
+                    lokasi[i]["lat"],
+                    lokasi[i]["lon"]
+                ),
+                (
+                    lokasi[j]["lat"],
+                    lokasi[j]["lon"]
+                )
             ).km
 
     return matriks_jarak
@@ -290,7 +304,7 @@ def hitung_jarak_rute(rute, matriks_jarak):
 
     for pelanggan in rute:
 
-        titik_tujuan = int(pelanggan["id"])
+        titik_tujuan = pelanggan["matrix_id"]
 
         total += matriks_jarak[
             titik_awal
@@ -2382,10 +2396,15 @@ elif menu == "Optimasi Distribusi":
             st.warning("Pilih minimal satu order.")
 
         else:
-            matriks_jarak = buat_matriks_jarak(df_pelanggan)
             gudang = df_pelanggan[
                 df_pelanggan["Kode"] == "G"
             ].iloc[0]
+            # BUAT MATRIKS DI SINI
+            matriks_jarak = buat_matriks_jarak(
+                pelanggan_terpilih,
+                gudang
+            )
+
             lat_gudang = float(
                 gudang["Y (Latitude)"]
             )
