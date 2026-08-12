@@ -225,39 +225,37 @@ def simpan_safety_stock(
 # BAGIAN 2 - FUNGSI PERHITUNGAN JARAK
 # DAN GENETIC ALGORITHM (GA)
 # ==========================================
-def hitung_jarak_rute(rute, gudang):
+# ==========================================
+# HITUNG JARAK RUTE DARI MATRIKS
+# ==========================================
+
+def hitung_jarak_rute(rute, matriks_jarak):
 
     total = 0
-    titik_awal = (
-        gudang["Y (Latitude)"],
-        gudang["X (Longitude)"]
-    )
+
+    # Mulai dari Gudang = ID 0
+    titik_awal = 0
 
     for pelanggan in rute:
 
-        tujuan = (
-            pelanggan["lat"],
-            pelanggan["lon"]
-        )
+        titik_tujuan = pelanggan["id"]
 
-        total += geodesic(
-            titik_awal,
-            tujuan
-        ).km
+        total += matriks_jarak[
+            titik_awal
+        ][
+            titik_tujuan
+        ]
 
-        titik_awal = tujuan
+        titik_awal = titik_tujuan
 
-    total += geodesic(
-        titik_awal,
-        (
-            gudang["Y (Latitude)"],
-            gudang["X (Longitude)"]
-        )
-    ).km
+    # Kembali ke Gudang
+    total += matriks_jarak[
+        titik_awal
+    ][0]
+
     return total
 
 # ==========================================
-# ROULETTE WHEEL SELECTION
 # ==========================================
 def roulette_selection(populasi, fitness):
 
