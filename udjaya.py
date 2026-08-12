@@ -235,49 +235,52 @@ def simpan_safety_stock(
 # DAN GENETIC ALGORITHM (GA)
 # ==========================================
 # ==========================================
-# MEMBUAT MATRIKS JARAK
+# MEMBUAT MATRIKS JARAK BERDASARKAN ID
 # ==========================================
-
 def buat_matriks_jarak(df_pelanggan):
 
-    jumlah_lokasi = len(df_pelanggan)
+    # Pastikan ID berupa integer
+    df_pelanggan = df_pelanggan.copy()
+    df_pelanggan["ID"] = pd.to_numeric(
+        df_pelanggan["ID"],
+        errors="coerce"
+    ).astype(int)
 
-    matriks_jarak = [
-        [0.0 for _ in range(jumlah_lokasi)]
-        for _ in range(jumlah_lokasi)
-    ]
+    # ID lokasi
+    daftar_id = df_pelanggan["ID"].tolist()
 
-    for i in range(jumlah_lokasi):
+    # Matriks menggunakan ID sebagai index
+    matriks_jarak = {
+        id_asal: {}
+        for id_asal in daftar_id
+    }
 
-        lat1 = float(
-            df_pelanggan.iloc[i]["Y (Latitude)"]
-        )
+    for _, asal in df_pelanggan.iterrows():
 
-        lon1 = float(
-            df_pelanggan.iloc[i]["X (Longitude)"]
-        )
+        id_asal = int(asal["ID"])
 
-        for j in range(jumlah_lokasi):
+        lat1 = float(asal["Y (Latitude)"])
+        lon1 = float(asal["X (Longitude)"])
 
-            lat2 = float(
-                df_pelanggan.iloc[j]["Y (Latitude)"]
-            )
+        for _, tujuan in df_pelanggan.iterrows():
 
-            lon2 = float(
-                df_pelanggan.iloc[j]["X (Longitude)"]
-            )
+            id_tujuan = int(tujuan["ID"])
 
-            matriks_jarak[i][j] = geodesic(
+            lat2 = float(tujuan["Y (Latitude)"])
+            lon2 = float(tujuan["X (Longitude)"])
+
+            matriks_jarak[id_asal][id_tujuan] = geodesic(
                 (lat1, lon1),
                 (lat2, lon2)
             ).km
 
     return matriks_jarak
-
+    
+# BUAT MATRIKS
+matriks_jarak = buat_matriks_jarak(df_pelanggan)
 # ==========================================
 # HITUNG JARAK RUTE DARI MATRIKS
 # ==========================================
-
 def hitung_jarak_rute(rute, matriks_jarak):
 
     total = 0
@@ -287,7 +290,7 @@ def hitung_jarak_rute(rute, matriks_jarak):
 
     for pelanggan in rute:
 
-        titik_tujuan = pelanggan["id"]
+        titik_tujuan = int(pelanggan["id"])
 
         total += matriks_jarak[
             titik_awal
