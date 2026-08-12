@@ -275,10 +275,7 @@ def buat_matriks_jarak(df_pelanggan):
     return matriks_jarak
 
 
-# BUAT MATRIKS JARAK
-matriks_jarak = buat_matriks_jarak(
-    df_pelanggan
-)
+
 # ==========================================
 # HITUNG JARAK RUTE DARI MATRIKS
 # ==========================================
