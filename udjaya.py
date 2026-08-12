@@ -186,6 +186,15 @@ df_permintaan["Permintaan (kg)"] = pd.to_numeric(
     df_permintaan["Permintaan (kg)"],
     errors="coerce"
 )
+df_pelanggan["ID"] = pd.to_numeric(
+    df_pelanggan["ID"],
+    errors="coerce"
+).astype(int)
+
+df_pelanggan = df_pelanggan.sort_values(
+    "ID"
+).reset_index(drop=True)
+
 
 def simpan_safety_stock(
     tahun,
@@ -225,6 +234,51 @@ def simpan_safety_stock(
 # BAGIAN 2 - FUNGSI PERHITUNGAN JARAK
 # DAN GENETIC ALGORITHM (GA)
 # ==========================================
+# ==========================================
+# MEMBUAT MATRIKS JARAK
+# ==========================================
+
+def buat_matriks_jarak(df_pelanggan):
+
+    jumlah_lokasi = len(df_pelanggan)
+
+    matriks_jarak = [
+        [0.0 for _ in range(jumlah_lokasi)]
+        for _ in range(jumlah_lokasi)
+    ]
+
+    for i in range(jumlah_lokasi):
+
+        lat1 = float(
+            df_pelanggan.iloc[i]["Y (Latitude)"]
+        )
+
+        lon1 = float(
+            df_pelanggan.iloc[i]["X (Longitude)"]
+        )
+
+        for j in range(jumlah_lokasi):
+
+            lat2 = float(
+                df_pelanggan.iloc[j]["Y (Latitude)"]
+            )
+
+            lon2 = float(
+                df_pelanggan.iloc[j]["X (Longitude)"]
+            )
+
+            matriks_jarak[i][j] = geodesic(
+                (lat1, lon1),
+                (lat2, lon2)
+            ).km
+
+    return matriks_jarak
+
+
+# BUAT MATRIKS JARAK
+matriks_jarak = buat_matriks_jarak(
+    df_pelanggan
+)
 # ==========================================
 # HITUNG JARAK RUTE DARI MATRIKS
 # ==========================================
