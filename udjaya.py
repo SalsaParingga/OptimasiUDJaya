@@ -283,7 +283,7 @@ def roulette_selection(populasi, fitness):
 
 def genetic_algorithm(
     pelanggan,
-    gudang,
+    matriks_jarak,
     pop_size=20,
     generasi=50,
     pc=0.8,          # crossover rate
@@ -312,7 +312,7 @@ def genetic_algorithm(
 
     for krom in populasi:
         print([p["nama"] for p in krom],
-            hitung_jarak_rute(krom, gudang))
+            hitung_jarak_rute(krom, matriks_jarak))
         
     for _ in range(generasi):
         # ===============================
@@ -321,7 +321,7 @@ def genetic_algorithm(
         fitness = []
 
         for krom in populasi:
-            jarak = hitung_jarak_rute(krom, gudang)
+            jarak = hitung_jarak_rute(krom, matriks_jarak)
             fitness.append(1 / jarak)
 
         # ===============================
@@ -378,14 +378,14 @@ def genetic_algorithm(
 
         # Mengganti kromosom dengan fitness terburuk
         populasi.sort(
-            key=lambda x: hitung_jarak_rute(x, gudang),
+            key=lambda x: hitung_jarak_rute(x, matriks_jarak),
             reverse=True
         )
 
         populasi[0] = child
 
     populasi.sort(
-    key=lambda x: hitung_jarak_rute(x, gudang)
+    key=lambda x: hitung_jarak_rute(x, matriks_jarak)
 )
     hasil = populasi[0]
 
@@ -394,7 +394,7 @@ def genetic_algorithm(
         print(p["nama"])
     print("===== TERBAIK =====")
     print([p["nama"] for p in hasil])
-    print(hitung_jarak_rute(hasil, gudang))
+    print(hitung_jarak_rute(hasil, matriks_jarak))
 
     return hasil
 
@@ -2286,6 +2286,7 @@ elif menu == "Optimasi Distribusi":
                 ].iloc[0]
 
                 pelanggan_terpilih.append({
+                    "id": int(data["ID"]),
 
                     "nama": nama,
 
@@ -2353,7 +2354,7 @@ elif menu == "Optimasi Distribusi":
 
                 k["rute"] = genetic_algorithm(
                     k["pelanggan"],
-                    gudang
+                       matriks_jarak
                 )
             #for k in kendaraan_hasil:
                 #k["rute"] = k["pelanggan"]
