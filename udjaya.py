@@ -274,8 +274,6 @@ def buat_matriks_jarak(df_pelanggan):
 
     return matriks_jarak
 
-
-
 # ==========================================
 # HITUNG JARAK RUTE DARI MATRIKS
 # ==========================================
@@ -2381,6 +2379,7 @@ elif menu == "Optimasi Distribusi":
             st.warning("Pilih minimal satu order.")
 
         else:
+            matriks_jarak = buat_matriks_jarak(df_pelanggan)
             gudang = df_pelanggan[
                 df_pelanggan["Kode"] == "G"
             ].iloc[0]
