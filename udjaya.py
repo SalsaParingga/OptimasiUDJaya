@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import math
 from oauth2client.service_account import ServiceAccountCredentials
 from geopy.distance import geodesic
 import folium
@@ -238,6 +239,8 @@ def simpan_safety_stock(
 # MEMBUAT MATRIKS JARAK UNTUK ORDER TERPILIH
 # ==========================================
 
+import math
+
 def buat_matriks_jarak(pelanggan_terpilih, gudang):
 
     # Gudang = index 0
@@ -249,10 +252,7 @@ def buat_matriks_jarak(pelanggan_terpilih, gudang):
     }]
 
     # Pelanggan terpilih mulai dari index 1
-    for i, pelanggan in enumerate(
-        pelanggan_terpilih,
-        start=1
-    ):
+    for i, pelanggan in enumerate(pelanggan_terpilih, start=1):
 
         pelanggan["matrix_id"] = i
 
@@ -277,16 +277,32 @@ def buat_matriks_jarak(pelanggan_terpilih, gudang):
             if i == j:
                 continue
 
-            matriks_jarak[i][j] = geodesic(
-                (
-                    lokasi[i]["lat"],
-                    lokasi[i]["lon"]
-                ),
-                (
-                    lokasi[j]["lat"],
-                    lokasi[j]["lon"]
-                )
-            ).km
+            lat1 = lokasi[i]["lat"]
+            lon1 = lokasi[i]["lon"]
+
+            lat2 = lokasi[j]["lat"]
+            lon2 = lokasi[j]["lon"]
+
+            # Konversi selisih koordinat dari derajat ke kilometer
+            delta_lat = (lat2 - lat1) * 111.32
+
+            rata_lat = math.radians(
+                (lat1 + lat2) / 2
+            )
+
+            delta_lon = (
+                (lon2 - lon1)
+                * 111.32
+                * math.cos(rata_lat)
+            )
+
+            # Euclidean Distance dalam kilometer
+            jarak = math.sqrt(
+                delta_lat ** 2 +
+                delta_lon ** 2
+            )
+
+            matriks_jarak[i][j] = jarak
 
     return matriks_jarak
     
@@ -348,8 +364,8 @@ def roulette_selection(populasi, fitness):
 def genetic_algorithm(
     pelanggan,
     matriks_jarak,
-    pop_size=20,
-    generasi=50,
+    pop_size=3,
+    generasi=10,
     pc=0.8,          # crossover rate
     pm=0.2           # mutation rate
 ):
@@ -429,7 +445,7 @@ def genetic_algorithm(
         else:
             child = parent1.copy()
         # Mutasi hanya jika pelanggan minimal 2
-        if len(child) >= 2 and random.random() < 0.2:
+        if len(child) >= 2 and random.random() < pm:
             i, j = random.sample(
                 range(len(child)),
                 2
