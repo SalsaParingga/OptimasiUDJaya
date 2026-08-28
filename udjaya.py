@@ -2849,7 +2849,7 @@ elif menu == "Monitoring Distribusi":
         st.warning("Belum ada data distribusi.")
         st.stop()
 
-    df_pelanggan, df_kendaraan, df_permintaan, df_order = load_data()
+    #df_pelanggan, df_kendaraan, df_permintaan, df_order = load_data()
 
     gudang = df_pelanggan[
         df_pelanggan["Nama Pelanggan"] == "Gudang UD Jaya"
