@@ -234,15 +234,21 @@ def simpan_safety_stock(
 # BAGIAN 2 - FUNGSI PERHITUNGAN JARAK
 # DAN GENETIC ALGORITHM (GA)
 # ==========================================
-# ==========================================
-# MEMBUAT MATRIKS JARAK UNTUK ORDER TERPILIH
-# ==========================================
 
+from geopy.distance import geodesic
 import math
+
+
+# ==========================================
+# MEMBUAT MATRIKS JARAK GEODESIC
+# ==========================================
 
 def buat_matriks_jarak(pelanggan_terpilih, gudang):
 
-    # Gudang = index 0
+    # ==========================================
+    # GUDANG = MATRIX ID 0
+    # ==========================================
+
     lokasi = [{
         "matrix_id": 0,
         "nama": "Gudang UD Jaya",
@@ -250,7 +256,10 @@ def buat_matriks_jarak(pelanggan_terpilih, gudang):
         "lon": float(gudang["X (Longitude)"])
     }]
 
-    # Pelanggan terpilih mulai dari index 1
+    # ==========================================
+    # PELANGGAN = MATRIX ID 1, 2, 3, ...
+    # ==========================================
+
     for i, pelanggan in enumerate(pelanggan_terpilih, start=1):
 
         pelanggan["matrix_id"] = i
@@ -262,57 +271,63 @@ def buat_matriks_jarak(pelanggan_terpilih, gudang):
             "lon": float(pelanggan["lon"])
         })
 
+    # ==========================================
+    # JUMLAH LOKASI
+    # ==========================================
+
     jumlah_lokasi = len(lokasi)
+
+    # ==========================================
+    # INISIALISASI MATRIKS
+    # ==========================================
 
     matriks_jarak = [
         [0.0 for _ in range(jumlah_lokasi)]
         for _ in range(jumlah_lokasi)
     ]
 
+    # ==========================================
+    # HITUNG JARAK GEODESIC
+    # ==========================================
+
     for i in range(jumlah_lokasi):
 
         for j in range(jumlah_lokasi):
 
+            # Jarak lokasi ke dirinya sendiri = 0
             if i == j:
                 continue
 
-            lat1 = lokasi[i]["lat"]
-            lon1 = lokasi[i]["lon"]
-
-            lat2 = lokasi[j]["lat"]
-            lon2 = lokasi[j]["lon"]
-
-            # Konversi selisih koordinat dari derajat ke kilometer
-            delta_lat = (lat2 - lat1) * 111.32
-
-            rata_lat = math.radians(
-                (lat1 + lat2) / 2
+            titik_1 = (
+                lokasi[i]["lat"],
+                lokasi[i]["lon"]
             )
 
-            delta_lon = (
-                (lon2 - lon1)
-                * 111.32
-                * math.cos(rata_lat)
+            titik_2 = (
+                lokasi[j]["lat"],
+                lokasi[j]["lon"]
             )
 
-            # Euclidean Distance dalam kilometer
-            jarak = math.sqrt(
-                delta_lat ** 2 +
-                delta_lon ** 2
-            )
+            # Geodesic distance dalam kilometer
+            jarak = geodesic(
+                titik_1,
+                titik_2
+            ).km
 
             matriks_jarak[i][j] = jarak
 
     return matriks_jarak
-    
+
+
 # ==========================================
 # HITUNG JARAK RUTE DARI MATRIKS
 # ==========================================
+
 def hitung_jarak_rute(rute, matriks_jarak):
 
     total = 0
 
-    # Mulai dari Gudang = ID 0
+    # Mulai dari gudang = Matrix ID 0
     titik_awal = 0
 
     for pelanggan in rute:
@@ -327,13 +342,12 @@ def hitung_jarak_rute(rute, matriks_jarak):
 
         titik_awal = titik_tujuan
 
-    # Kembali ke Gudang
+    # Kembali ke gudang
     total += matriks_jarak[
         titik_awal
     ][0]
 
     return total
-
 # ==========================================
 # ==========================================
 def roulette_selection(populasi, fitness):
