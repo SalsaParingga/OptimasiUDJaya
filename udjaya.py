@@ -169,7 +169,7 @@ def load_data():
     df_order = pd.DataFrame(spreadsheet.worksheet("order").get_all_records())
 
     return df_pelanggan, df_kendaraan, df_permintaan, df_order
-df_pelanggan, df_kendaraan, df_permintaan, df_order = load_data()
+
 # =====================================================
 # PREPROCESSING DATA
 # =====================================================
