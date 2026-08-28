@@ -169,6 +169,7 @@ def load_data():
     df_order = pd.DataFrame(spreadsheet.worksheet("order").get_all_records())
 
     return df_pelanggan, df_kendaraan, df_permintaan, df_order
+df_pelanggan, df_kendaraan, df_permintaan, df_order = load_data()
 # =====================================================
 # PREPROCESSING DATA
 # =====================================================
@@ -234,21 +235,15 @@ def simpan_safety_stock(
 # BAGIAN 2 - FUNGSI PERHITUNGAN JARAK
 # DAN GENETIC ALGORITHM (GA)
 # ==========================================
+# ==========================================
+# MEMBUAT MATRIKS JARAK UNTUK ORDER TERPILIH
+# ==========================================
 
-from geopy.distance import geodesic
 import math
-
-
-# ==========================================
-# MEMBUAT MATRIKS JARAK GEODESIC
-# ==========================================
 
 def buat_matriks_jarak(pelanggan_terpilih, gudang):
 
-    # ==========================================
-    # GUDANG = MATRIX ID 0
-    # ==========================================
-
+    # Gudang = index 0
     lokasi = [{
         "matrix_id": 0,
         "nama": "Gudang UD Jaya",
@@ -256,10 +251,7 @@ def buat_matriks_jarak(pelanggan_terpilih, gudang):
         "lon": float(gudang["X (Longitude)"])
     }]
 
-    # ==========================================
-    # PELANGGAN = MATRIX ID 1, 2, 3, ...
-    # ==========================================
-
+    # Pelanggan terpilih mulai dari index 1
     for i, pelanggan in enumerate(pelanggan_terpilih, start=1):
 
         pelanggan["matrix_id"] = i
@@ -271,63 +263,57 @@ def buat_matriks_jarak(pelanggan_terpilih, gudang):
             "lon": float(pelanggan["lon"])
         })
 
-    # ==========================================
-    # JUMLAH LOKASI
-    # ==========================================
-
     jumlah_lokasi = len(lokasi)
-
-    # ==========================================
-    # INISIALISASI MATRIKS
-    # ==========================================
 
     matriks_jarak = [
         [0.0 for _ in range(jumlah_lokasi)]
         for _ in range(jumlah_lokasi)
     ]
 
-    # ==========================================
-    # HITUNG JARAK GEODESIC
-    # ==========================================
-
     for i in range(jumlah_lokasi):
 
         for j in range(jumlah_lokasi):
 
-            # Jarak lokasi ke dirinya sendiri = 0
             if i == j:
                 continue
 
-            titik_1 = (
-                lokasi[i]["lat"],
-                lokasi[i]["lon"]
+            lat1 = lokasi[i]["lat"]
+            lon1 = lokasi[i]["lon"]
+
+            lat2 = lokasi[j]["lat"]
+            lon2 = lokasi[j]["lon"]
+
+            # Konversi selisih koordinat dari derajat ke kilometer
+            delta_lat = (lat2 - lat1) * 111.32
+
+            rata_lat = math.radians(
+                (lat1 + lat2) / 2
             )
 
-            titik_2 = (
-                lokasi[j]["lat"],
-                lokasi[j]["lon"]
+            delta_lon = (
+                (lon2 - lon1)
+                * 111.32
+                * math.cos(rata_lat)
             )
 
-            # Geodesic distance dalam kilometer
-            jarak = geodesic(
-                titik_1,
-                titik_2
-            ).km
+            # Euclidean Distance dalam kilometer
+            jarak = math.sqrt(
+                delta_lat ** 2 +
+                delta_lon ** 2
+            )
 
             matriks_jarak[i][j] = jarak
 
     return matriks_jarak
-
-
+    
 # ==========================================
 # HITUNG JARAK RUTE DARI MATRIKS
 # ==========================================
-
 def hitung_jarak_rute(rute, matriks_jarak):
 
     total = 0
 
-    # Mulai dari gudang = Matrix ID 0
+    # Mulai dari Gudang = ID 0
     titik_awal = 0
 
     for pelanggan in rute:
@@ -342,12 +328,13 @@ def hitung_jarak_rute(rute, matriks_jarak):
 
         titik_awal = titik_tujuan
 
-    # Kembali ke gudang
+    # Kembali ke Gudang
     total += matriks_jarak[
         titik_awal
     ][0]
 
     return total
+
 # ==========================================
 # ==========================================
 def roulette_selection(populasi, fitness):
@@ -1804,7 +1791,7 @@ elif menu == "Input Pelanggan":
             # Bersihkan cache agar pelanggan baru langsung terbaca
             st.cache_data.clear()
 
-            df_pelanggan, df_kendaraan, df_permintaan, df_order = load_data()
+            #df_pelanggan, df_kendaraan, df_permintaan, df_order = load_data()
             st.success(
                 "✅ Pelanggan berhasil ditambahkan."
             )
@@ -2417,116 +2404,228 @@ elif menu == "Optimasi Distribusi":
 # BAGIAN 15
 # PROSES CVRP + GENETIC ALGORITHM
 # ==========================================
-    if st.button("🚀 Proses CVRP + GA"):
 
-        if len(pelanggan_terpilih) == 0:
-            st.warning("Pilih minimal satu order.")
+if st.button("🚀 Proses CVRP + GA"):
 
-        else:
-            gudang = df_pelanggan[
-                df_pelanggan["Kode"] == "G"
-            ].iloc[0]
-            # BUAT MATRIKS DI SINI
-            matriks_jarak = buat_matriks_jarak(
-                pelanggan_terpilih,
-                gudang
-            )
+    if len(pelanggan_terpilih) == 0:
 
-            lat_gudang = float(
-                gudang["Y (Latitude)"]
-            )
-            lon_gudang = float(
-                gudang["X (Longitude)"]
-            )
-            #rute_optimal = genetic_algorithm(
-            #    pelanggan_terpilih,
-            #    gudang
-            #)
+        st.warning("Pilih minimal satu order.")
 
-            #kendaraan_hasil = alokasi_kendaraan(
-            #    rute_optimal
-            #)
-            kendaraan_hasil = alokasi_kendaraan(
+    else:
+
+        import time
+
+        waktu_mulai = time.time()
+
+        # ==========================================
+        # 1. AMBIL GUDANG
+        # ==========================================
+
+        gudang = df_pelanggan[
+            df_pelanggan["Kode"] == "G"
+        ].iloc[0]
+
+        lat_gudang = float(
+            gudang["Y (Latitude)"]
+        )
+
+        lon_gudang = float(
+            gudang["X (Longitude)"]
+        )
+
+        # ==========================================
+        # 2. BUAT MATRIKS JARAK
+        # ==========================================
+
+        matriks_jarak = buat_matriks_jarak(
+            pelanggan_terpilih,
+            gudang
+        )
+
+        # ==========================================
+        # 3. ALOKASI KENDARAAN
+        # ==========================================
+
+        kendaraan_hasil = alokasi_kendaraan(
             pelanggan_terpilih
+        )
+
+        # ==========================================
+        # 4. JALANKAN GENETIC ALGORITHM
+        # ==========================================
+
+        for k in kendaraan_hasil:
+
+            k["rute"] = genetic_algorithm(
+                k["pelanggan"],
+                matriks_jarak
             )
-            for k in kendaraan_hasil:
 
-                k["rute"] = genetic_algorithm(
-                    k["pelanggan"],
-                       matriks_jarak
-                )
-            #for k in kendaraan_hasil:
-                #k["rute"] = k["pelanggan"]
+        # ==========================================
+        # 5. SIMPAN HASIL KE SESSION STATE
+        # ==========================================
 
-            st.session_state.kendaraan_hasil = kendaraan_hasil
-            st.session_state.show_map = True
+        st.session_state.kendaraan_hasil = (
+            kendaraan_hasil
+        )
 
-            # ==========================
-            # SIMPAN HASIL OPTIMASI
-            # =========================
-            ws_hasil = spreadsheet.worksheet("hasil_optimasi")
+        st.session_state.show_map = True
 
-            today = date.today().strftime("%d/%m/%Y")
-            minggu = df_order_menunggu.iloc[0]["minggu"]
+        # ==========================================
+        # 6. AMBIL WORKSHEET HASIL OPTIMASI
+        # ==========================================
 
-            for k in kendaraan_hasil:
-                koordinat = [
-                    [lat_gudang, lon_gudang]
-                ]
+        ws_hasil = spreadsheet.worksheet(
+            "hasil_optimasi"
+        )
 
-                for p in k["rute"]:
-                    koordinat.append([
-                        p["lat"],
-                        p["lon"]
-                    ])
+        today = date.today().strftime(
+            "%d/%m/%Y"
+        )
+
+        minggu = df_order_menunggu.iloc[0][
+            "minggu"
+        ]
+
+        # ==========================================
+        # 7. KUMPULKAN SEMUA HASIL
+        # ==========================================
+
+        semua_hasil = []
+
+        for k in kendaraan_hasil:
+
+            # --------------------------------------
+            # Buat koordinat rute
+            # --------------------------------------
+
+            koordinat = [
+                [lat_gudang, lon_gudang]
+            ]
+
+            for p in k["rute"]:
 
                 koordinat.append([
-                    lat_gudang,
-                    lon_gudang
+                    p["lat"],
+                    p["lon"]
                 ])
 
-                jalan_asli = ambil_rute_jalan(koordinat)
-                
-                route_json = json.dumps(jalan_asli)
-                for urutan, p in enumerate(k["rute"], start=1):
-                    print("LAT =", p["lat"])
-                    print("LON =", p["lon"])
-                    ws_hasil.append_row([
+            koordinat.append([
+                lat_gudang,
+                lon_gudang
+            ])
 
-                        today,
-                        minggu,
-                        k["jenis"],
-                        p["nama"],
-                        p["alamat"],
-                        p["permintaan"],
-                        p["lat"],
-                        p["lon"],
-                        "Belum Berangkat",
-                        urutan,
-                        route_json
+            # --------------------------------------
+            # AMBIL RUTE JALAN OSRM
+            # --------------------------------------
 
-                    ])
-            # UPDATE STATUS ORDER
-            # ==========================
-            ws_order = spreadsheet.worksheet("order")
-            data_order = ws_order.get_all_records()
+            jalan_asli = ambil_rute_jalan(
+                koordinat
+            )
 
-            for i, row in enumerate(data_order):
+            route_json = json.dumps(
+                jalan_asli
+            )
 
-                if (
-                    row["pelanggan"] in pilihan_order
-                    and row["status"] == "Menunggu"
-                ):
+            # --------------------------------------
+            # KUMPULKAN DATA HASIL
+            # --------------------------------------
 
-                    ws_order.update_cell(
-                        i + 2,
-                        8,
-                        "Diproses"
-                    )
-            st.session_state.show_map = True
-            st.session_state.kendaraan_hasil = kendaraan_hasil
-           #load_data.clear()
-            st.success("Optimasi berhasil dijalankan.")   
+            for urutan, p in enumerate(
+                k["rute"],
+                start=1
+            ):
+
+                semua_hasil.append([
+
+                    today,
+                    minggu,
+                    k["jenis"],
+                    p["nama"],
+                    p["alamat"],
+                    p["permintaan"],
+                    p["lat"],
+                    p["lon"],
+                    "Belum Berangkat",
+                    urutan,
+                    route_json
+
+                ])
+
+        # ==========================================
+        # 8. SIMPAN SEMUA HASIL SEKALIGUS
+        # ==========================================
+
+        if semua_hasil:
+
+            ws_hasil.append_rows(
+                semua_hasil,
+                value_input_option="USER_ENTERED"
+            )
+
+        # ==========================================
+        # 9. UPDATE STATUS ORDER
+        # ==========================================
+
+        ws_order = spreadsheet.worksheet(
+            "order"
+        )
+
+        data_order = ws_order.get_all_records()
+
+        cells_to_update = []
+
+        for i, row in enumerate(
+            data_order,
+            start=2
+        ):
+
+            if (
+                row["pelanggan"] in pilihan_order
+                and row["status"] == "Menunggu"
+            ):
+
+                cells_to_update.append({
+                    "range": f"H{i}",
+                    "values": [["Diproses"]]
+                })
+
+        # ==========================================
+        # UPDATE SEKALIGUS
+        # ==========================================
+
+        if cells_to_update:
+
+            ws_order.batch_update(
+                cells_to_update
+            )
+
+        # ==========================================
+        # 10. SIMPAN SESSION STATE
+        # ==========================================
+
+        st.session_state.show_map = True
+
+        st.session_state.kendaraan_hasil = (
+            kendaraan_hasil
+        )
+
+        # ==========================================
+        # SELESAI
+        # ==========================================
+
+        print(
+            "🔥 TOTAL WAKTU:",
+            round(
+                time.time() - waktu_mulai,
+                2
+            ),
+            "detik"
+        )
+
+        st.success(
+            "Optimasi berhasil dijalankan."
+        )
 # ==========================================
 # BAGIAN 16
 # VISUALISASI HASIL OPTIMASI DISTRIBUSI
